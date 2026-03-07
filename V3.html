@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FabricVision — Textile Mockup Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8; --warm: #FDFAF5; --linen: #E8DFD0; --thread: #B8A898;
+    --espresso: #2D2420; --rust: #C4622D; --gold: #C9963A; --sage: #6B7C5E;
+    --text: #2D2420; --muted: #7A6E66;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header { background: var(--espresso); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--rust); }
+  .logo-name { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--cream); }
+  .logo-tag  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--rust); text-transform: uppercase; letter-spacing: 3px; margin-left: 10px; }
+  .header-r  { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); }
+
+  /* MAIN */
+  .main { max-width: 1080px; margin: 0 auto; padding: 36px 40px 80px; }
+
+  /* KEY BAR */
+  .key-bar { background: var(--espresso); border-left: 3px solid var(--rust); border-radius: 2px; padding: 14px 18px; margin-bottom: 32px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .key-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; }
+  .key-input { flex: 1; min-width: 200px; background: rgba(255,255,255,0.06); border: 1px solid #4A3E38; border-radius: 2px; padding: 8px 12px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .key-input:focus { border-color: var(--rust); }
+  .key-status { font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 2px; white-space: nowrap; }
+  .key-status.ok      { background: rgba(107,124,94,0.2); color: #8FAB7E; border: 1px solid rgba(107,124,94,0.3); }
+  .key-status.waiting { background: rgba(184,168,152,0.1); color: var(--thread); border: 1px solid rgba(184,168,152,0.2); }
+  .free-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #8FAB7E; background: rgba(107,124,94,0.12); border: 1px solid rgba(107,124,94,0.2); padding: 5px 10px; border-radius: 2px; white-space: nowrap; }
+
+  /* SECTION HEADER */
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+  .sec-num  { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--rust); letter-spacing: 2px; }
+  .sec-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; }
+  .sec-rule { flex: 1; height: 1px; background: var(--linen); }
+  .section  { margin-bottom: 36px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone { border: 2px dashed #C4B8A8; border-radius: 3px; padding: 36px 20px; text-align: center; background: var(--warm); cursor: pointer; transition: all 0.2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--rust); background: rgba(196,98,45,0.03); }
+  .upload-icon { font-size: 32px; opacity: 0.4; margin-bottom: 10px; }
+  .upload-title { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 6px; }
+  .upload-sub { font-size: 12px; color: var(--muted); }
+  .browse-btn { margin-top: 14px; display: inline-block; padding: 8px 22px; background: var(--espresso); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 1px; cursor: pointer; transition: background 0.2s; }
+  .browse-btn:hover { background: var(--rust); }
+
+  /* THUMBS */
+  .thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 10px; margin-top: 14px; }
+  .thumb { position: relative; aspect-ratio: 1; border-radius: 2px; overflow: hidden; border: 2px solid #D0C4B8; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-remove { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 50%; font-size: 13px; line-height: 20px; cursor: pointer; padding: 0; }
+  .thumb-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent,rgba(0,0,0,0.6)); color: #fff; font-family: 'DM Mono', monospace; font-size: 8px; padding: 10px 4px 3px; text-align: center; letter-spacing: 1px; }
+
+  /* USE CASE GRID */
+  .uc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 8px; }
+  .uc-card { border: 1.5px solid #D8CFC4; border-radius: 2px; padding: 10px 12px; cursor: pointer; background: var(--warm); display: flex; align-items: center; gap: 8px; user-select: none; transition: all 0.15s; }
+  .uc-card:hover { border-color: var(--thread); }
+  .uc-card.on { border-color: var(--rust); background: rgba(196,98,45,0.06); }
+  .uc-icon { font-size: 17px; flex-shrink: 0; }
+  .uc-name { font-size: 12px; font-weight: 500; flex: 1; line-height: 1.3; }
+  .uc-check { width: 14px; height: 14px; border-radius: 50%; background: transparent; border: 1.5px solid #D0C4B8; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; flex-shrink: 0; transition: all 0.15s; }
+  .uc-card.on .uc-check { background: var(--rust); border-color: var(--rust); }
+
+  /* SCENE BOX */
+  .scene-box { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; padding: 16px; }
+  .scene-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+  .scene-ta { width: 100%; background: rgba(184,168,152,0.1); border: 1px solid #DDD4C8; border-radius: 1px; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); resize: vertical; min-height: 70px; outline: none; line-height: 1.6; }
+  .hints { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .hint { padding: 4px 10px; background: #EDE5D8; border: none; border-radius: 20px; font-size: 11px; color: #6A5E56; cursor: pointer; }
+  .hint:hover { background: #DDD4C8; }
+
+  /* GENERATE BAR */
+  .gen-bar { background: var(--espresso); border-radius: 2px; padding: 22px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .gen-info-title { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--cream); margin-bottom: 4px; }
+  .gen-info-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: #8A7A72; }
+  .gen-btn { padding: 13px 32px; background: var(--rust); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; border: none; border-radius: 1px; cursor: pointer; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+  .gen-btn:hover:not(:disabled) { background: #D4732D; transform: translateY(-1px); }
+  .gen-btn:disabled { background: #4A3830; color: #6A5A52; cursor: not-allowed; transform: none; }
+
+  /* ERROR */
+  .error-box { background: rgba(196,77,77,0.08); border-left: 3px solid #C44D4D; border-radius: 2px; padding: 10px 14px; margin-top: 12px; font-size: 13px; color: #C44D4D; display: none; }
+
+  /* PROGRESS */
+  .progress-box { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; padding: 22px; margin-top: 28px; display: none; }
+  .progress-title { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 16px; }
+  .step-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--linen); }
+  .step-row:last-child { border-bottom: none; }
+  .step-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--thread); flex-shrink: 0; margin-top: 5px; transition: all 0.3s; }
+  .step-dot.active { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+  .step-dot.done  { background: var(--sage); }
+  .step-dot.error { background: #C44D4D; }
+  .step-lbl  { font-size: 13px; font-weight: 500; }
+  .step-detail { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ANALYSIS */
+  .analysis-box { background: var(--espresso); border-radius: 2px; padding: 20px 24px; margin-top: 18px; display: none; }
+  .analysis-lbl  { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #8A7A72; margin-bottom: 10px; }
+  .analysis-text { font-size: 13px; color: #E0D8CC; line-height: 1.75; font-weight: 300; }
+
+  /* RESULTS */
+  .results-section { margin-top: 40px; display: none; }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px,1fr)); gap: 16px; margin-top: 4px; }
+  .result-card { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+  .result-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(28,24,20,0.1); }
+  .result-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
+  .result-placeholder { width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg,#E8DFD0,#C8BDB0); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #8A7A72; letter-spacing: 2px; }
+  .result-err { width: 100%; aspect-ratio: 16/10; background: rgba(196,77,77,0.07); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #C44D4D; padding: 12px; text-align: center; }
+  .result-meta { padding: 12px 14px 6px; }
+  .result-tag { display: inline-flex; align-items: center; gap: 5px; background: var(--espresso); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border-radius: 1px; margin-bottom: 7px; }
+  .result-prompt { font-size: 11px; color: var(--muted); line-height: 1.6; font-style: italic; }
+  .result-actions { padding: 0 14px 12px; display: flex; gap: 7px; }
+  .result-dl { padding: 5px 12px; background: var(--rust); color: #fff; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 1px; text-decoration: none; }
+  .result-copy { padding: 5px 12px; background: transparent; border: 1px solid #DDD4C8; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 1px; cursor: pointer; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <span class="logo-name">FabricVision</span>
+    <span class="logo-tag">Textile Mockup Studio</span>
+  </div>
+  <span class="header-r">Claude + Pollinations.AI &nbsp;·&nbsp; Free Draft v1</span>
+</header>
+
+<div class="main">
+
+  <!-- KEY BAR -->
+  <div class="key-bar">
+    <span class="key-label">Anthropic Key</span>
+    <input class="key-input" type="password" id="keyInput" placeholder="Paste your sk-ant- key here…" oninput="onKeyInput()">
+    <span class="key-status waiting" id="keyStatus">⬡ Key required</span>
+    <span class="free-badge">✦ Images: FREE (Pollinations)</span>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">01 —</span>
+      <span class="sec-title">Upload Fabric Photographs</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+      ondragover="onDragOver(event)" ondragenter="onDragOver(event)"
+      ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="upload-icon">📸</div>
+      <div class="upload-title">Drop fabric photos here</div>
+      <div class="upload-sub">Up to 5 views of the <strong>same fabric</strong> — more angles = better AI analysis</div>
+      <button class="browse-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">Browse Files</button>
+    </div>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="onFileInput(event)">
+    <div class="thumb-grid" id="thumbGrid"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">02 —</span>
+      <span class="sec-title">Select Mockup Use Cases</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="uc-grid" id="ucGrid"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">03 —</span>
+      <span class="sec-title">Scene Context <span style="font-family:'DM Sans';font-size:14px;font-weight:300;color:var(--muted)">(optional)</span></span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="scene-box">
+      <div class="scene-label">Additional scene instructions for all mockups</div>
+      <textarea class="scene-ta" id="sceneInput" placeholder="e.g. Modern coastal home, natural light, afternoon sun, lifestyle photography..."></textarea>
+      <div class="hints">
+        <button class="hint" onclick="addHint('luxury interior, warm lighting')">✦ Luxury interior</button>
+        <button class="hint" onclick="addHint('coastal nautical setting')">⚓ Coastal / nautical</button>
+        <button class="hint" onclick="addHint('bright outdoor patio, summer afternoon')">☀ Outdoor summer</button>
+        <button class="hint" onclick="addHint('modern minimalist home, neutral palette')">◻ Minimalist modern</button>
+        <button class="hint" onclick="addHint('rustic farmhouse style')">🌾 Rustic farmhouse</button>
+        <button class="hint" onclick="addHint('photorealistic product photography, studio quality')">📷 Studio quality</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="gen-bar">
+    <div style="flex:1">
+      <div class="gen-info-title">Ready to generate mockups</div>
+      <div class="gen-info-sub" id="genSummary">Upload fabric photographs to begin</div>
+    </div>
+    <button class="gen-btn" id="genBtn" onclick="generate()" disabled>Generate Mockups</button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- PROGRESS -->
+  <div class="progress-box" id="progressBox">
+    <div class="progress-title" id="progressTitle">Generating your mockups…</div>
+    <div class="step-row"><div class="step-dot" id="dot0"></div><div><div class="step-lbl">Fabric Analysis</div><div class="step-detail" id="det0">Claude examines texture, color and pattern</div></div></div>
+    <div class="step-row"><div class="step-dot" id="dot1"></div><div><div class="step-lbl">Prompt Engineering</div><div class="step-detail" id="det1">Claude crafts scene-specific prompts</div></div></div>
+    <div class="step-row"><div class="step-dot" id="dot2"></div><div><div class="step-lbl">Image Generation</div><div class="step-detail" id="det2">Pollinations.AI (Flux) — free, 20–40s per image</div></div></div>
+  </div>
+
+  <!-- ANALYSIS -->
+  <div class="analysis-box" id="analysisBox">
+    <div class="analysis-lbl">Claude's Fabric Analysis</div>
+    <div class="analysis-text" id="analysisText"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="sec-head">
+      <span class="sec-num">✦</span>
+      <span class="sec-title">Generated Mockups</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="results-grid" id="resultsGrid"></div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──
+const USE_CASES = [
+  {id:'curtains',        icon:'🪟', name:'Curtains / Drapes'},
+  {id:'upholstery',      icon:'🛋️', name:'Upholstery'},
+  {id:'outdoor_furn',    icon:'🪑', name:'Outdoor Furniture'},
+  {id:'pillow',          icon:'🛏️', name:'Throw Pillow'},
+  {id:'bedding',         icon:'🌙', name:'Bedding'},
+  {id:'awning',          icon:'⛺', name:'Awning'},
+  {id:'boat_cover',      icon:'⛵', name:'Boat Cover'},
+  {id:'boat_upholstery', icon:'🚢', name:'Boat Upholstery'},
+  {id:'grill_cover',     icon:'🔥', name:'Grill Cover'},
+  {id:'rug',             icon:'🏠', name:'Area Rug'},
+  {id:'tablecloth',      icon:'🍽️', name:'Tablecloth'},
+  {id:'patio_umbrella',  icon:'☂️', name:'Patio Umbrella'},
+];
+
+// ── STATE ──
+let fabrics   = []; // [{file, dataURL}]
+let selected  = new Set();
+let running   = false;
+let resultData = [];
+
+// ── INIT ──
+(function init() {
+  const grid = document.getElementById('ucGrid');
+  grid.innerHTML = USE_CASES.map(uc => `
+    <div class="uc-card" id="uc-${uc.id}" onclick="toggleUC('${uc.id}')">
+      <span class="uc-icon">${uc.icon}</span>
+      <span class="uc-name">${uc.name}</span>
+      <div class="uc-check" id="chk-${uc.id}">✓</div>
+    </div>`).join('');
+})();
+
+// ── KEY ──
+function onKeyInput() {
+  const v = document.getElementById('keyInput').value.trim();
+  const ok = v.length > 20;
+  const s  = document.getElementById('keyStatus');
+  s.textContent = ok ? '✓ Key ready' : '⬡ Key required';
+  s.className   = 'key-status ' + (ok ? 'ok' : 'waiting');
+  updateGenBtn();
+}
+
+// ── DRAG & DROP ──
+function onDragOver(e)  { e.preventDefault(); e.stopPropagation(); document.getElementById('dropZone').classList.add('drag'); }
+function onDragLeave(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('dropZone').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('dropZone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+function onFileInput(e) { handleFiles(e.target.files); e.target.value = ''; }
+
+async function handleFiles(fileList) {
+  const imgs = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  const slots = 5 - fabrics.length;
+  if (!imgs.length || slots <= 0) return;
+  const toAdd = imgs.slice(0, slots);
+  for (const file of toAdd) {
+    const dataURL = await readAsDataURL(file);
+    fabrics.push({ file, dataURL });
+  }
+  renderThumbs();
+  updateGenBtn();
+}
+
+function readAsDataURL(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+function renderThumbs() {
+  document.getElementById('thumbGrid').innerHTML = fabrics.map((f, i) => `
+    <div class="thumb">
+      <img src="${f.dataURL}" alt="View ${i+1}">
+      <button class="thumb-remove" onclick="removeThumb(${i})">×</button>
+      <div class="thumb-label">VIEW ${i+1}</div>
+    </div>`).join('');
+}
+
+function removeThumb(i) {
+  fabrics.splice(i, 1);
+  renderThumbs();
+  updateGenBtn();
+}
+
+// ── USE CASES ──
+function toggleUC(id) {
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  document.getElementById('uc-' + id).classList.toggle('on');
+  updateGenBtn();
+}
+
+// ── HINTS ──
+function addHint(text) {
+  const ta = document.getElementById('sceneInput');
+  ta.value = ta.value ? ta.value + ', ' + text : text;
+}
+
+// ── GENERATE BUTTON STATE ──
+function updateGenBtn() {
+  const key  = document.getElementById('keyInput').value.trim();
+  const ok   = key.length > 20 && fabrics.length > 0 && selected.size > 0 && !running;
+  const btn  = document.getElementById('genBtn');
+  btn.disabled = !ok;
+  const sum  = document.getElementById('genSummary');
+  if (!fabrics.length) sum.textContent = 'Upload fabric photographs to begin';
+  else if (!selected.size) sum.textContent = `${fabrics.length} photo(s) loaded — select use cases above`;
+  else sum.textContent = `${fabrics.length} photo(s) · ${selected.size} use case(s) → ${Math.min(selected.size, 8)} mockups`;
+}
+
+// ── STEP HELPERS ──
+function setStep(i, state, detail) {
+  document.getElementById('dot' + i).className = 'step-dot ' + state;
+  if (detail) document.getElementById('det' + i).textContent = detail;
+}
+
+// ── MAIN GENERATE ──
+async function generate() {
+  const apiKey = document.getElementById('keyInput').value.trim();
+  const scene  = document.getElementById('sceneInput').value.trim();
+  running = true;
+  updateGenBtn();
+  hideError();
+  resultData = [];
+
+  // Show progress
+  const pb = document.getElementById('progressBox');
+  pb.style.display = 'block';
+  document.getElementById('progressTitle').textContent = 'Generating your mockups…';
+  setStep(0, 'active', 'Sending images to Claude…');
+  setStep(1, 'waiting', 'Waiting…');
+  setStep(2, 'waiting', 'Waiting…');
+  document.getElementById('analysisBox').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('genBtn').innerHTML = '<span class="spinner"></span>Generating…';
+
+  try {
+    // ── STEP 1: Analyze ──
+    const imageContents = await Promise.all(fabrics.map(async f => ({
+      type: 'image',
+      source: { type: 'base64', media_type: f.file.type, data: await readAsBase64(f.file) }
+    })));
+    const ucNames = Array.from(selected).map(id => USE_CASES.find(u => u.id === id)?.name).join(', ');
+
+    const analysis = await callClaude(apiKey, [{
+      role: 'user',
+      content: [
+        ...imageContents,
+        { type: 'text', text:
+`You are an expert textile analyst for a home textile e-commerce company.
+
+All ${fabrics.length} photo(s) show the SAME fabric from different angles. Synthesize into one unified description:
+1. Color palette
+2. Pattern / texture / weave
+3. Material appearance (sheen, weight, drape)
+4. Style category
+5. Key visual features
+
+Will be used for mockups of: ${ucNames}
+${scene ? 'Scene context: ' + scene : ''}
+
+Write 3-4 paragraphs as one unified fabric description.`
+        }
+      ]
+    }]);
+
+    document.getElementById('analysisBox').style.display = 'block';
+    document.getElementById('analysisText').textContent = analysis;
+    setStep(0, 'done', 'Analysis complete');
+
+    // ── STEP 2: Prompts ──
+    setStep(1, 'active', 'Crafting image prompts…');
+    const ucList = Array.from(selected).map(id => USE_CASES.find(u => u.id === id)).slice(0, 8);
+
+    const promptResp = await callClaude(apiKey, [{
+      role: 'user',
+      content:
+`Expert image generation prompt engineer for textile/interior design photography.
+
+Fabric analysis:
+${analysis}
+${scene ? '\nScene context: ' + scene : ''}
+
+Write ${ucList.length} image generation prompts, one per use case:
+${ucList.map((u, i) => `${i+1}. ${u.name}`).join('\n')}
+
+Rules:
+- Show the fabric accurately in each specific setting
+- Include realistic room/environment context
+- Specify photographic style (interior design photography, natural light, high resolution)
+- Aspirational but realistic for homeowners
+
+Reply ONLY with a JSON array, no markdown fences:
+[{"usecase":"Name","prompt":"full prompt here"},...]`
+    }]);
+
+    const match = promptResp.replace(/```json|```/g, '').match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('Could not parse prompts from Claude. Please try again.');
+    const prompts = JSON.parse(match[0]);
+    setStep(1, 'done', `${prompts.length} prompts ready`);
+
+    // ── STEP 3: Images ──
+    setStep(2, 'active', `Generating ${prompts.length} images…`);
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsGrid').innerHTML = prompts.map((p, i) => `
+      <div class="result-card" id="rc-${i}">
+        <div class="result-placeholder" id="rimg-${i}">RENDERING…</div>
+        <div class="result-meta">
+          <div class="result-tag">${USE_CASES.find(u=>u.name===p.usecase)?.icon||'✦'} ${p.usecase}</div>
+          <div class="result-prompt">${p.prompt.substring(0, 150)}…</div>
+        </div>
+        <div class="result-actions">
+          <button class="result-copy" onclick="copyPrompt(${i})">Copy Prompt</button>
+        </div>
+      </div>`).join('');
+    resultData = prompts.map(p => ({ ...p, dataURL: null }));
+
+    // Generate sequentially to be kind to Pollinations free tier
+    let done = 0;
+    for (let i = 0; i < prompts.length; i++) {
+      try {
+        const dataURL = await fetchImageAsDataURL(prompts[i].prompt);
+        resultData[i].dataURL = dataURL;
+        const imgEl = document.getElementById('rimg-' + i);
+        imgEl.outerHTML = `<img class="result-img" src="${dataURL}" alt="${prompts[i].usecase}">`;
+        const actEl = document.querySelector(`#rc-${i} .result-actions`);
+        actEl.innerHTML = `
+          <a class="result-dl" href="${dataURL}" download="fabricvision-${prompts[i].usecase.replace(/\s+/g,'-').toLowerCase()}.jpg">Download</a>
+          <button class="result-copy" onclick="copyPrompt(${i})">Copy Prompt</button>`;
+      } catch (e) {
+        document.getElementById('rimg-' + i).outerHTML =
+          `<div class="result-err">⚠ ${e.message}</div>`;
+      }
+      done++;
+      setStep(2, done < prompts.length ? 'active' : 'done', `${done}/${prompts.length} images complete`);
+    }
+
+    document.getElementById('progressTitle').textContent = '✦ All mockups complete';
+
+  } catch (e) {
+    showError(e.message);
+    ['dot0','dot1','dot2'].forEach(id => {
+      if (document.getElementById(id).className.includes('active'))
+        document.getElementById(id).className = 'step-dot error';
+    });
+  }
+
+  running = false;
+  document.getElementById('genBtn').textContent = 'Generate Mockups';
+  updateGenBtn();
+}
+
+// ── API HELPERS ──
+function readAsBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function callClaude(apiKey, messages) {
+  const DIRECT = 'https://api.anthropic.com/v1/messages';
+  const PROXY  = 'https://corsproxy.io/?' + encodeURIComponent(DIRECT);
+  const body = JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages });
+  const headers = {
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+    'content-type': 'application/json',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+
+  let response;
+  // Try direct first, fall back to CORS proxy if browser blocks it
+  try {
+    response = await fetch(DIRECT, { method: 'POST', headers, body });
+  } catch (e) {
+    try {
+      response = await fetch(PROXY, { method: 'POST', headers, body });
+    } catch (e2) {
+      throw new Error('Could not reach Anthropic API. Check your key and connection. (' + e2.message + ')');
+    }
+  }
+
+  if (!response.ok) {
+    let msg = 'HTTP ' + response.status;
+    try { const e = await response.json(); msg = e.error?.message || msg; } catch(_) {}
+    throw new Error('Anthropic API error: ' + msg);
+  }
+  const data = await response.json();
+  return data.content.map(c => c.text || '').join('');
+}
+
+// Fetch Pollinations image and convert to base64 data URL
+// This avoids any Content-Security-Policy img-src restrictions on your server
+async function fetchImageAsDataURL(prompt) {
+  const encoded = encodeURIComponent(prompt.slice(0, 500));
+  const seed    = Math.floor(Math.random() * 999999);
+  const url     = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=640&seed=${seed}&model=flux&nologo=true`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const blob = await resp.blob();
+      return await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = () => res(r.result);
+        r.onerror = () => rej(new Error('Blob read failed'));
+        r.readAsDataURL(blob);
+      });
+    } catch (e) {
+      if (attempt === 2) throw new Error('Image failed after 3 attempts: ' + e.message);
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+}
+
+// ── RESULT ACTIONS ──
+function copyPrompt(i) {
+  navigator.clipboard.writeText(resultData[i]?.prompt || '').catch(() => {});
+}
+
+// ── ERROR UI ──
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+</script>
+</body>
+</html>
