@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FabricVision — Textile Mockup Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8; --warm: #FDFAF5; --linen: #E8DFD0; --thread: #B8A898;
+    --espresso: #2D2420; --rust: #C4622D; --gold: #C9963A; --sage: #6B7C5E;
+    --text: #2D2420; --muted: #7A6E66;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header { background: var(--espresso); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--rust); }
+  .logo-name { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--cream); }
+  .logo-tag  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--rust); text-transform: uppercase; letter-spacing: 3px; margin-left: 10px; }
+  .header-r  { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); }
+
+  /* MAIN */
+  .main { max-width: 1080px; margin: 0 auto; padding: 36px 40px 80px; }
+
+  /* KEY BAR */
+  .key-bar { background: var(--espresso); border-left: 3px solid var(--rust); border-radius: 2px; padding: 14px 18px; margin-bottom: 32px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+  .key-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; }
+  .key-input { flex: 1; min-width: 200px; background: rgba(255,255,255,0.06); border: 1px solid #4A3E38; border-radius: 2px; padding: 8px 12px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .key-input:focus { border-color: var(--rust); }
+  .key-link { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); text-decoration: none; letter-spacing: 1px; white-space: nowrap; border-bottom: 1px solid rgba(184,168,152,0.3); transition: color 0.2s, border-color 0.2s; }
+  .key-link:hover { color: var(--rust); border-bottom-color: var(--rust); }
+  .key-status { font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 2px; white-space: nowrap; }
+  .key-status.ok      { background: rgba(107,124,94,0.2); color: #8FAB7E; border: 1px solid rgba(107,124,94,0.3); }
+  .key-status.waiting { background: rgba(184,168,152,0.1); color: var(--thread); border: 1px solid rgba(184,168,152,0.2); }
+  .free-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: #8FAB7E; background: rgba(107,124,94,0.12); border: 1px solid rgba(107,124,94,0.2); padding: 5px 10px; border-radius: 2px; white-space: nowrap; }
+
+  /* SECTION HEADER */
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+  .sec-num  { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--rust); letter-spacing: 2px; }
+  .sec-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; }
+  .sec-rule { flex: 1; height: 1px; background: var(--linen); }
+  .section  { margin-bottom: 36px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone { border: 2px dashed #C4B8A8; border-radius: 3px; padding: 36px 20px; text-align: center; background: var(--warm); cursor: pointer; transition: all 0.2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--rust); background: rgba(196,98,45,0.03); }
+  .upload-icon { font-size: 32px; opacity: 0.4; margin-bottom: 10px; }
+  .upload-title { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 6px; }
+  .upload-sub { font-size: 12px; color: var(--muted); }
+  .browse-btn { margin-top: 14px; display: inline-block; padding: 8px 22px; background: var(--espresso); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 1px; cursor: pointer; transition: background 0.2s; }
+  .browse-btn:hover { background: var(--rust); }
+
+  /* THUMBS */
+  .thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 10px; margin-top: 14px; }
+  .thumb { position: relative; aspect-ratio: 1; border-radius: 2px; overflow: hidden; border: 2px solid #D0C4B8; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-remove { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 50%; font-size: 13px; line-height: 20px; cursor: pointer; padding: 0; }
+  .thumb-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent,rgba(0,0,0,0.6)); color: #fff; font-family: 'DM Mono', monospace; font-size: 8px; padding: 10px 4px 3px; text-align: center; letter-spacing: 1px; }
+
+  /* USE CASE GRID */
+  .uc-grid { display: flex; flex-direction: column; gap: 24px; }
+  .uc-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .uc-group-icon { font-size: 16px; }
+  .uc-group-name { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 400; color: var(--espresso); }
+  .uc-group-rule { flex: 1; height: 1px; background: var(--linen); }
+  .uc-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
+  .uc-card { border: 1.5px solid #D8CFC4; border-radius: 2px; padding: 10px 12px; cursor: pointer; background: var(--warm); display: flex; align-items: center; gap: 8px; user-select: none; transition: all 0.15s; }
+  .uc-card:hover { border-color: var(--thread); }
+  .uc-card.on { border-color: var(--rust); background: rgba(196,98,45,0.06); }
+  .uc-icon { font-size: 17px; flex-shrink: 0; }
+  .uc-name { font-size: 12px; font-weight: 500; flex: 1; line-height: 1.3; }
+  .uc-check { width: 14px; height: 14px; border-radius: 50%; background: transparent; border: 1.5px solid #D0C4B8; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; flex-shrink: 0; transition: all 0.15s; }
+  .uc-card.on .uc-check { background: var(--rust); border-color: var(--rust); }
+  .uc-card { flex-direction: column; align-items: stretch; }
+  .uc-card-top { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .uc-prompt-label { font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-top: 10px; margin-bottom: 4px; }
+  .uc-prompt-ta { width: 100%; background: rgba(184,168,152,0.12); border: 1px solid #DDD4C8; border-radius: 1px; padding: 7px 8px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); resize: vertical; min-height: 110px; outline: none; line-height: 1.5; transition: border-color 0.2s; }
+  .uc-prompt-ta:focus { border-color: var(--thread); }
+  .uc-card.on .uc-prompt-ta { border-color: rgba(196,98,45,0.3); background: rgba(196,98,45,0.03); }
+  .uc-reset { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 0; text-decoration: underline; margin-top: 3px; }
+  .uc-reset:hover { color: var(--rust); }
+
+  /* SCENE BOX */
+  .scene-box { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; padding: 16px; }
+  .scene-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+  .scene-ta { width: 100%; background: rgba(184,168,152,0.1); border: 1px solid #DDD4C8; border-radius: 1px; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); resize: vertical; min-height: 70px; outline: none; line-height: 1.6; }
+  .hints { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .hint { padding: 4px 10px; background: #EDE5D8; border: none; border-radius: 20px; font-size: 11px; color: #6A5E56; cursor: pointer; }
+  .hint:hover { background: #DDD4C8; }
+
+  /* GENERATE BAR */
+  .gen-bar { background: var(--espresso); border-radius: 2px; padding: 22px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .gen-info-title { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--cream); margin-bottom: 4px; }
+  .gen-info-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: #8A7A72; }
+  .gen-btn { padding: 13px 32px; background: var(--rust); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; border: none; border-radius: 1px; cursor: pointer; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+  .gen-btn:hover:not(:disabled) { background: #D4732D; transform: translateY(-1px); }
+  .gen-btn:disabled { background: #4A3830; color: #6A5A52; cursor: not-allowed; transform: none; }
+
+  /* ERROR */
+  .error-box { background: rgba(196,77,77,0.08); border-left: 3px solid #C44D4D; border-radius: 2px; padding: 10px 14px; margin-top: 12px; font-size: 13px; color: #C44D4D; display: none; }
+
+  /* PROGRESS */
+  .progress-box { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; padding: 22px; margin-top: 28px; display: none; }
+  .progress-title { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 16px; }
+  .step-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--linen); }
+  .step-row:last-child { border-bottom: none; }
+  .step-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--thread); flex-shrink: 0; margin-top: 5px; transition: all 0.3s; }
+  .step-dot.active { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+  .step-dot.done  { background: var(--sage); }
+  .step-dot.error { background: #C44D4D; }
+  .step-lbl  { font-size: 13px; font-weight: 500; }
+  .step-detail { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ANALYSIS */
+  .analysis-box { background: var(--espresso); border-radius: 2px; padding: 20px 24px; margin-top: 18px; display: none; }
+  .analysis-lbl  { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #8A7A72; margin-bottom: 10px; }
+  .analysis-text { font-size: 13px; color: #E0D8CC; line-height: 1.75; font-weight: 300; }
+
+  /* RESULTS */
+  .results-section { margin-top: 40px; display: none; }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px,1fr)); gap: 16px; margin-top: 4px; }
+  .result-card { background: var(--warm); border: 1px solid var(--linen); border-radius: 2px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+  .result-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(28,24,20,0.1); }
+  .result-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+  .result-placeholder { width: 100%; aspect-ratio: 1/1; background: linear-gradient(135deg,#E8DFD0,#C8BDB0); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #8A7A72; letter-spacing: 2px; }
+  .result-err { width: 100%; aspect-ratio: 1/1; background: rgba(196,77,77,0.07); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #C44D4D; padding: 12px; text-align: center; }
+  .result-meta { padding: 12px 14px 6px; }
+  .result-tag { display: inline-flex; align-items: center; gap: 5px; background: var(--espresso); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border-radius: 1px; margin-bottom: 7px; }
+  .result-prompt { font-size: 11px; color: var(--muted); line-height: 1.6; font-style: italic; }
+  .result-actions { padding: 0 14px 12px; display: flex; gap: 7px; }
+  .result-dl { padding: 5px 12px; background: var(--rust); color: #fff; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 1px; text-decoration: none; }
+  .result-copy { padding: 5px 12px; background: transparent; border: 1px solid #DDD4C8; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 1px; cursor: pointer; }
+
+  /* FEEDBACK */
+  .feedback-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px 0; flex-wrap: wrap; }
+  .fb-btn { padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; border-radius: 1px; cursor: pointer; border: 1px solid #DDD4C8; background: transparent; color: var(--muted); transition: all 0.2s; }
+  .fb-btn:hover { border-color: var(--thread); color: var(--text); }
+  .fb-btn.good  { background: rgba(107,124,94,0.12); border-color: rgba(107,124,94,0.4); color: #6B7C5E; }
+  .fb-btn.bad   { background: rgba(196,77,77,0.08); border-color: rgba(196,77,77,0.3); color: #C44D4D; }
+  .fb-btn.gold  { background: rgba(201,150,58,0.12); border-color: rgba(201,150,58,0.4); color: #C9963A; }
+  .fb-note { width: 100%; background: rgba(184,168,152,0.1); border: 1px solid #DDD4C8; border-radius: 1px; padding: 6px 9px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); outline: none; resize: none; height: 44px; line-height: 1.5; margin-top: 4px; }
+  .fb-note:focus { border-color: var(--thread); }
+  .fb-saved { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--sage); letter-spacing: 1px; opacity: 0; transition: opacity 0.3s; }
+  .fb-saved.show { opacity: 1; }
+  .fb-history-btn { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
+  .fb-history-btn:hover { color: var(--rust); }
+
+  /* FEEDBACK HISTORY PANEL */
+  .fb-history { background: var(--espresso); border-radius: 2px; padding: 20px 24px; margin-top: 28px; display: none; }
+  .fb-history-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--cream); margin-bottom: 16px; }
+  .fb-history-group { margin-bottom: 18px; }
+  .fb-history-uc { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--rust); margin-bottom: 8px; }
+  .fb-entry { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(184,168,152,0.15); }
+  .fb-entry:last-child { border-bottom: none; }
+  .fb-entry-rating { font-size: 14px; flex-shrink: 0; }
+  .fb-entry-detail { flex: 1; }
+  .fb-entry-prompt { font-size: 11px; color: #C8C0B8; line-height: 1.5; font-style: italic; }
+  .fb-entry-note { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold); margin-top: 3px; }
+  .fb-entry-date { font-family: 'DM Mono', monospace; font-size: 9px; color: #6A5E56; margin-top: 2px; }
+
+  /* LIGHTBOX */
+  .lightbox { display: none; position: fixed; inset: 0; background: rgba(20,16,14,0.92); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 2px; box-shadow: 0 24px 80px rgba(0,0,0,0.6); object-fit: contain; }
+  .lightbox-label { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 2px; pointer-events: none; }
+  .lightbox-close { position: fixed; top: 20px; right: 28px; font-size: 28px; color: rgba(255,255,255,0.5); cursor: pointer; line-height: 1; background: none; border: none; }
+  .lightbox-close:hover { color: #fff; }
+  .result-img { cursor: zoom-in; }
+  .result-img:hover { opacity: 0.92; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  /* PASSWORD GATE */
+  .gate { position: fixed; inset: 0; background: var(--espresso); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+  .gate-logo { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--cream); margin-bottom: 8px; }
+  .gate-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; }
+  .gate-box { background: rgba(255,255,255,0.04); border: 1px solid #3A2E28; border-radius: 3px; padding: 32px 40px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 320px; }
+  .gate-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--thread); letter-spacing: 2px; text-transform: uppercase; align-self: flex-start; }
+  .gate-input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid #4A3E38; border-radius: 2px; padding: 11px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 14px; outline: none; letter-spacing: 3px; transition: border-color 0.2s; }
+  .gate-input:focus { border-color: var(--rust); }
+  .gate-btn { width: 100%; padding: 11px; background: var(--rust); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; border: none; border-radius: 1px; cursor: pointer; transition: background 0.2s; }
+  .gate-btn:hover { background: #D4732D; }
+  .gate-error { font-family: 'DM Mono', monospace; font-size: 11px; color: #C44D4D; letter-spacing: 1px; display: none; }
+  .gate-error.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div class="gate" id="gate">
+  <div class="gate-logo">FabricVision</div>
+  <div class="gate-sub">Textile Mockup Studio</div>
+  <div class="gate-box">
+    <div class="gate-label">Access Password</div>
+    <input class="gate-input" type="password" id="gateInput" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter') checkPassword()">
+    <div class="gate-error" id="gateError">Incorrect password — try again</div>
+    <button class="gate-btn" onclick="checkPassword()">Enter</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <span class="logo-name">FabricVision</span>
+    <span class="logo-tag">Textile Mockup Studio</span>
+  </div>
+  <span class="header-r">Claude + Pollinations.AI &nbsp;·&nbsp; Free Draft v1</span>
+</header>
+
+<div class="main">
+
+  <!-- KEY BAR -->
+  <div class="key-bar">
+    <div style="display:flex;align-items:center;gap:12px;width:100%;">
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" class="key-link">Anthropic Key ↗</a>
+      <input class="key-input" type="password" id="keyInput" placeholder="Paste your sk-ant- key here…" oninput="onKeyInput()" style="flex:1;">
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;width:100%;">
+      <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" class="key-link">OpenAI Key ↗</a>
+      <input class="key-input" type="password" id="openaiKeyInput" placeholder="Paste your sk-... OpenAI key here…" oninput="onKeyInput()" style="flex:1;">
+    </div>
+    <span class="key-status waiting" id="keyStatus">⬡ Keys required</span>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">01 —</span>
+      <span class="sec-title">Upload Fabric Photographs</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+      ondragover="onDragOver(event)" ondragenter="onDragOver(event)"
+      ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="upload-icon">📸</div>
+      <div class="upload-title">Drop fabric photos here</div>
+      <div class="upload-sub">Up to 5 views of the <strong>same fabric</strong> — more angles = better AI analysis</div>
+      <button class="browse-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">Browse Files</button>
+    </div>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="onFileInput(event)">
+    <div class="thumb-grid" id="thumbGrid"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">02 —</span>
+      <span class="sec-title">Select Mockup Use Cases</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="uc-grid" id="ucGrid"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="sec-num">03 —</span>
+      <span class="sec-title">Scene Context <span style="font-family:'DM Sans';font-size:14px;font-weight:300;color:var(--muted)">(optional)</span></span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="scene-box">
+      <div class="scene-label">Additional scene instructions for all mockups</div>
+      <textarea class="scene-ta" id="sceneInput" placeholder="e.g. Modern coastal home, natural light, afternoon sun, lifestyle photography..."></textarea>
+      <div class="hints">
+        <button class="hint" onclick="addHint('luxury interior, warm lighting')">✦ Luxury interior</button>
+        <button class="hint" onclick="addHint('coastal nautical setting')">⚓ Coastal / nautical</button>
+        <button class="hint" onclick="addHint('bright outdoor patio, summer afternoon')">☀ Outdoor summer</button>
+        <button class="hint" onclick="addHint('modern minimalist home, neutral palette')">◻ Minimalist modern</button>
+        <button class="hint" onclick="addHint('rustic farmhouse style')">🌾 Rustic farmhouse</button>
+        <button class="hint" onclick="addHint('photorealistic product photography, studio quality')">📷 Studio quality</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="gen-bar">
+    <div style="flex:1">
+      <div class="gen-info-title">Ready to generate mockups</div>
+      <div class="gen-info-sub" id="genSummary">Enter both API keys and upload fabric photographs</div>
+    </div>
+    <button class="gen-btn" id="genBtn" onclick="generate()" disabled>Generate Mockups</button>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- PROGRESS -->
+  <div class="progress-box" id="progressBox">
+    <div class="progress-title" id="progressTitle">Generating your mockups…</div>
+    <div class="step-row"><div class="step-dot" id="dot0"></div><div><div class="step-lbl">Fabric Analysis</div><div class="step-detail" id="det0">Claude examines texture, color and pattern</div></div></div>
+    <div class="step-row"><div class="step-dot" id="dot1"></div><div><div class="step-lbl">Prompt Engineering</div><div class="step-detail" id="det1">Claude crafts scene-specific prompts</div></div></div>
+    <div class="step-row"><div class="step-dot" id="dot2"></div><div><div class="step-lbl">Image Generation</div><div class="step-detail" id="det2">DALL·E 3 — generating high quality mockup…</div></div></div>
+  </div>
+
+  <!-- ANALYSIS -->
+  <div class="analysis-box" id="analysisBox">
+    <div class="analysis-lbl">Claude's Fabric Analysis</div>
+    <div class="analysis-text" id="analysisText"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="sec-head">
+      <span class="sec-num">✦</span>
+      <span class="sec-title">Generated Mockups</span>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="results-grid" id="resultsGrid"></div>
+  </div>
+
+</div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">×</button>
+    <img id="lightboxImg" src="" alt="Mockup preview">
+    <div class="lightbox-label" id="lightboxLabel"></div>
+  </div>
+
+  <!-- FEEDBACK HISTORY -->
+  <div class="fb-history" id="fbHistory">
+    <div class="fb-history-title">⭐ Feedback History</div>
+    <div id="fbHistoryBody"></div>
+    <button onclick="document.getElementById('fbHistory').style.display='none'"
+      style="margin-top:16px; font-family:'DM Mono',monospace; font-size:10px; color:var(--thread); background:none; border:1px solid #4A3E38; padding:6px 14px; border-radius:1px; cursor:pointer; letter-spacing:1px;">
+      CLOSE
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──
+const USE_CASE_GROUPS = [
+  {
+    group: 'Indoor',
+    icon: '🏠',
+    cases: [
+      {id:'curtains',     icon:'🪟', name:'Curtains & Drapes',   default:'Floor-length curtains hanging in a bright living room window, soft natural light filtering through, elegant draping, professional interior design photography'},
+      {id:'upholstery',   icon:'🛋️', name:'Couch Upholstery',    default:'Modern sofa fully upholstered in this fabric, styled in a contemporary living room, professional interior photography, warm ambient lighting'},
+      {id:'accent_pillow',icon:'🛏️', name:'Accent Pillow',       default:'Decorative accent pillows made from this fabric arranged on a neutral sofa, cozy interior styling, soft natural light, professional home decor photography'},
+    ]
+  },
+  {
+    group: 'Outdoor',
+    icon: '☀️',
+    cases: [
+      {id:'patio_furn',   icon:'🪑', name:'Patio Furniture',     default:'Outdoor patio furniture cushions covered in this fabric, sunny backyard patio setting, lifestyle photography, vibrant natural light, lush garden background'},
+      {id:'window_seat',  icon:'🪟', name:'Window Seat',         default:'Built-in window seat cushion upholstered in this fabric, bright bay window with natural light, cozy reading nook, interior design photography'},
+      {id:'sailboat',     icon:'⛵', name:'Sail Boat Cushions',   default:'Sailboat cockpit cushions and seating upholstered in this fabric, boat docked at a sunny marina, nautical lifestyle photography, blue water background'},
+    ]
+  },
+  {
+    group: 'Awning',
+    icon: '⛺',
+    cases: [
+      {id:'motorboat_int',icon:'🚢', name:'Motor Boat Cushions & Seats', default:'Luxury motor boat interior seating and cushions upholstered in this fabric, sleek cabin interior, coastal lifestyle photography, natural light'},
+      {id:'motorboat_cov',icon:'🛥️', name:'Motor Boat Cover',    default:'Custom fitted motor boat cover made from this fabric on a motorboat docked at a marina, sunny day, product photography, blue water background'},
+      {id:'patio_awning', icon:'⛺', name:'Patio Awning',         default:'Retractable patio awning made from this fabric extended over an outdoor seating area, sunny exterior shot, architectural photography, blue sky background'},
+    ]
+  },
+  {
+    group: 'Other',
+    icon: '✦',
+    cases: [
+      {id:'other_1', icon:'✏️', name:'Custom Mockup 1', default:''},
+      {id:'other_2', icon:'✏️', name:'Custom Mockup 2', default:''},
+      {id:'other_3', icon:'✏️', name:'Custom Mockup 3', default:''},
+    ]
+  },
+];
+
+// Flatten for easy lookup elsewhere
+const USE_CASES = USE_CASE_GROUPS.flatMap(g => g.cases);
+
+// ── STATE ──
+let fabrics   = []; // [{file, dataURL}]
+let selected  = new Set();
+let running   = false;
+let resultData = [];
+
+// ── INIT ──
+(function init() {
+  const container = document.getElementById('ucGrid');
+  container.innerHTML = USE_CASE_GROUPS.map(group => {
+    const cards = group.cases.map(uc => {
+      const saved = loadPrompt(uc.id);
+      return `
+      <div class="uc-card" id="uc-${uc.id}">
+        <div class="uc-card-top" onclick="toggleUC('${uc.id}')">
+          <span class="uc-icon">${uc.icon}</span>
+          <span class="uc-name">${uc.name}</span>
+          <div class="uc-check" id="chk-${uc.id}">✓</div>
+        </div>
+        <div class="uc-prompt-label">${group.group === 'Other' ? 'Describe your custom mockup' : 'Scene instructions'}</div>
+        <textarea class="uc-prompt-ta" id="ta-${uc.id}"
+          placeholder="${group.group === 'Other' ? 'e.g. Grill cover on a Weber grill, backyard patio, summer afternoon...' : 'Custom scene instructions for ' + uc.name + '…'}"
+          oninput="savePrompt('${uc.id}', this.value)"
+          style="${group.group === 'Other' ? 'min-height:90px;' : ''}"
+        >${saved}</textarea>
+        ${group.group === 'Other' ? '' : '<button class="uc-reset" onclick="resetPrompt(\''+uc.id+'\')">↺ Reset to default</button>'}
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="uc-group">
+      <div class="uc-group-header">
+        <span class="uc-group-icon">${group.icon}</span>
+        <span class="uc-group-name">${group.group}</span>
+        <div class="uc-group-rule"></div>
+      </div>
+      <div class="uc-group-grid">${cards}</div>
+    </div>`;
+  }).join('');
+})();
+
+// ── PROMPT PERSISTENCE ──
+function storageKey(id) { return 'fv_prompt_' + id; }
+function loadPrompt(id) {
+  const uc = USE_CASES.find(u => u.id === id);
+  return localStorage.getItem(storageKey(id)) || uc?.default || '';
+}
+function savePrompt(id, value) {
+  localStorage.setItem(storageKey(id), value);
+}
+function resetPrompt(id) {
+  const uc = USE_CASES.find(u => u.id === id);
+  const def = uc?.default || '';
+  localStorage.setItem(storageKey(id), def);
+  document.getElementById('ta-' + id).value = def;
+}
+
+// ── KEY ──
+function onKeyInput() {
+  const ak = document.getElementById('keyInput').value.trim();
+  const ov = document.getElementById('openaiKeyInput').value.trim();
+  const ok = ov.startsWith('sk-');
+  const both = ak.length > 20 && ok;
+  const s  = document.getElementById('keyStatus');
+  s.textContent = both ? '✓ Keys ready' : '⬡ Keys required';
+  s.className   = 'key-status ' + (both ? 'ok' : 'waiting');
+  // Save keys to localStorage so they auto-fill after password entry
+  if (ak.length > 20) localStorage.setItem('fv_anthropic_key', ak);
+  if (ok)             localStorage.setItem('fv_openai_key', ov);
+  updateGenBtn();
+}
+
+// ── DRAG & DROP ──
+function onDragOver(e)  { e.preventDefault(); e.stopPropagation(); document.getElementById('dropZone').classList.add('drag'); }
+function onDragLeave(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('dropZone').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById('dropZone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+function onFileInput(e) { handleFiles(e.target.files); e.target.value = ''; }
+
+async function handleFiles(fileList) {
+  const imgs = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  const slots = 5 - fabrics.length;
+  if (!imgs.length || slots <= 0) return;
+  const toAdd = imgs.slice(0, slots);
+  for (const file of toAdd) {
+    const dataURL = await readAsDataURL(file);
+    fabrics.push({ file, dataURL });
+  }
+  renderThumbs();
+  updateGenBtn();
+}
+
+function readAsDataURL(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+function renderThumbs() {
+  document.getElementById('thumbGrid').innerHTML = fabrics.map((f, i) => `
+    <div class="thumb">
+      <img src="${f.dataURL}" alt="View ${i+1}">
+      <button class="thumb-remove" onclick="removeThumb(${i})">×</button>
+      <div class="thumb-label">VIEW ${i+1}</div>
+    </div>`).join('');
+}
+
+function removeThumb(i) {
+  fabrics.splice(i, 1);
+  renderThumbs();
+  updateGenBtn();
+}
+
+// ── USE CASES ──
+function toggleUC(id) {
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  document.getElementById('uc-' + id).classList.toggle('on');
+  updateGenBtn();
+}
+
+// ── HINTS ──
+function addHint(text) {
+  const ta = document.getElementById('sceneInput');
+  ta.value = ta.value ? ta.value + ', ' + text : text;
+}
+
+// ── GENERATE BUTTON STATE ──
+function updateGenBtn() {
+  const key  = document.getElementById('keyInput').value.trim();
+  const okey = document.getElementById('openaiKeyInput').value.trim();
+  const ok   = key.length > 20 && okey.startsWith('sk-') && fabrics.length > 0 && selected.size > 0 && !running;
+  const btn  = document.getElementById('genBtn');
+  btn.disabled = !ok;
+  const sum  = document.getElementById('genSummary');
+  if (!fabrics.length) sum.textContent = 'Enter both API keys and upload fabric photographs';
+  else if (!selected.size) sum.textContent = `${fabrics.length} photo(s) loaded — select use cases above`;
+  else sum.textContent = `${fabrics.length} photo(s) · ${selected.size} use case(s) → ${Math.min(selected.size, 8)} mockups`;
+}
+
+// ── STEP HELPERS ──
+function setStep(i, state, detail) {
+  document.getElementById('dot' + i).className = 'step-dot ' + state;
+  if (detail) document.getElementById('det' + i).textContent = detail;
+}
+
+// ── MAIN GENERATE ──
+async function generate() {
+  const apiKey = document.getElementById('keyInput').value.trim();
+  const scene  = document.getElementById('sceneInput').value.trim();
+  running = true;
+  updateGenBtn();
+  hideError();
+  resultData = [];
+
+  // Show progress
+  const pb = document.getElementById('progressBox');
+  pb.style.display = 'block';
+  document.getElementById('progressTitle').textContent = 'Generating your mockups…';
+  setStep(0, 'active', 'Sending images to Claude…');
+  setStep(1, 'waiting', 'Waiting…');
+  setStep(2, 'waiting', 'Waiting…');
+  document.getElementById('analysisBox').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('genBtn').innerHTML = '<span class="spinner"></span>Generating…';
+
+  try {
+    // ── STEP 1: Analyze ──
+    const imageContents = await Promise.all(fabrics.map(async f => ({
+      type: 'image',
+      source: { type: 'base64', media_type: f.file.type, data: await readAsBase64(f.file) }
+    })));
+    const ucNames = Array.from(selected).map(id => USE_CASES.find(u => u.id === id)?.name).join(', ');
+
+    const analysis = await callClaude(apiKey, [{
+      role: 'user',
+      content: [
+        ...imageContents,
+        { type: 'text', text:
+`You are an expert textile analyst for a home textile e-commerce company.
+
+All ${fabrics.length} photo(s) show the SAME fabric from different angles. Synthesize into one unified description:
+1. Color palette
+2. Pattern / texture / weave
+3. Material appearance (sheen, weight, drape)
+4. Style category
+5. Key visual features
+
+Will be used for mockups of: ${ucNames}
+${scene ? 'Scene context: ' + scene : ''}
+
+Write 3-4 paragraphs as one unified fabric description.`
+        }
+      ]
+    }]);
+
+    document.getElementById('analysisBox').style.display = 'block';
+    document.getElementById('analysisText').textContent = analysis;
+    setStep(0, 'done', 'Analysis complete');
+
+    // ── STEP 2: Prompts ──
+    setStep(1, 'active', 'Crafting image prompts…');
+    const ucList = Array.from(selected)
+      .map(id => USE_CASES.find(u => u.id === id))
+      .filter(u => {
+        // Skip Other slots that have no description entered
+        if (u.id.startsWith('other_') && !loadPrompt(u.id).trim()) return false;
+        return true;
+      })
+      .slice(0, 8);
+
+    const promptResp = await callClaude(apiKey, [{
+      role: 'user',
+      content:
+`You are helping generate simple image prompts for a textile mockup tool.
+
+The user has uploaded ${fabrics.length} photo(s) of a real fabric. Those photos will be sent directly to the image model alongside each prompt — so DO NOT describe the fabric in the prompt. The model can already see it.
+
+Write one short, natural prompt per use case — like you would type into ChatGPT. Each prompt should simply describe the scene and let the fabric photos do the rest.
+
+${scene ? 'Additional scene context to incorporate: ' + scene + '\n' : ''}${buildFeedbackContext() ? '\nPAST FEEDBACK:\n' + buildFeedbackContext() + '\n' : ''}
+Use cases:
+${ucList.map((u, i) => {
+  const custom = loadPrompt(u.id);
+  const isOther = u.id.startsWith('other_');
+  const label = isOther && custom ? custom.substring(0, 60) : u.name;
+  return `${i+1}. ${label}${custom ? '\n   Scene: ' + custom : ''}`;
+}).join('\n')}
+
+Keep each prompt short and direct — one or two sentences max. Like: "Show me what a couch would look like upholstered with these fabrics."
+
+Reply ONLY with a JSON array, no markdown fences:
+[{"usecase":"Name","prompt":"short natural prompt here"},...]`
+    }]);
+
+    const match = promptResp.replace(/```json|```/g, '').match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('Could not parse prompts from Claude. Please try again.');
+    const prompts = JSON.parse(match[0]);
+    setStep(1, 'done', `${prompts.length} prompts ready`);
+
+    // ── STEP 3: Images ──
+    setStep(2, 'active', `Generating ${prompts.length} images…`);
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsGrid').innerHTML = prompts.map((p, i) => `
+      <div class="result-card" id="rc-${i}">
+        <div class="result-placeholder" id="rimg-${i}">RENDERING…</div>
+        <div class="result-meta">
+          <div class="result-tag">${USE_CASES.find(u=>u.name===p.usecase)?.icon||'✦'} ${p.usecase}</div>
+          <div class="result-prompt">${p.prompt.substring(0, 150)}…</div>
+        </div>
+        <div class="result-actions">
+          <button class="result-copy" onclick="copyPrompt(${i})">Copy Prompt</button>
+        </div>
+      </div>`).join('');
+    resultData = prompts.map(p => ({ ...p, dataURL: null }));
+
+    // Generate sequentially to be kind to Pollinations free tier
+    let done = 0;
+    for (let i = 0; i < prompts.length; i++) {
+      setStep(2, 'active', `Generating image ${i+1} of ${prompts.length}…`);
+      try {
+        const imageUrl = await fetchImageAsDataURL(prompts[i].prompt);
+        const dataURL = imageUrl;
+        resultData[i].url = dataURL;
+        const imgEl = document.getElementById('rimg-' + i);
+        imgEl.outerHTML = `<img class="result-img" src="${dataURL}" alt="${prompts[i].usecase}" onclick="openLightbox('${dataURL}', '${prompts[i].usecase}')" title="Click to enlarge">`;
+        const actEl = document.querySelector(`#rc-${i} .result-actions`);
+        actEl.innerHTML = `
+          <a class="result-dl" href="${dataURL}" target="_blank" rel="noreferrer">Open Full Size ↗</a>
+          <button class="result-copy" onclick="copyPrompt(${i})">Copy Prompt</button>`;
+        renderFeedback(i, prompts[i].usecase, prompts[i].prompt);
+      } catch (e) {
+        document.getElementById('rimg-' + i).outerHTML =
+          `<div class="result-err">⚠ ${e.message}</div>`;
+      }
+      done++;
+      setStep(2, done < prompts.length ? 'active' : 'done', `${done}/${prompts.length} images complete`);
+    }
+
+    document.getElementById('progressTitle').textContent = '✦ All mockups complete';
+
+  } catch (e) {
+    showError(e.message);
+    ['dot0','dot1','dot2'].forEach(id => {
+      if (document.getElementById(id).className.includes('active'))
+        document.getElementById(id).className = 'step-dot error';
+    });
+  }
+
+  running = false;
+  document.getElementById('genBtn').textContent = 'Generate Mockups';
+  updateGenBtn();
+}
+
+// ── API HELPERS ──
+function readAsBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function callClaude(apiKey, messages) {
+  const DIRECT = 'https://api.anthropic.com/v1/messages';
+  const PROXY  = 'https://corsproxy.io/?' + encodeURIComponent(DIRECT);
+  const body = JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages });
+  const headers = {
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+    'content-type': 'application/json',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+
+  let response;
+  // Try direct first, fall back to CORS proxy if browser blocks it
+  try {
+    response = await fetch(DIRECT, { method: 'POST', headers, body });
+  } catch (e) {
+    try {
+      response = await fetch(PROXY, { method: 'POST', headers, body });
+    } catch (e2) {
+      throw new Error('Could not reach Anthropic API. Check your key and connection. (' + e2.message + ')');
+    }
+  }
+
+  if (!response.ok) {
+    let msg = 'HTTP ' + response.status;
+    try { const e = await response.json(); msg = e.error?.message || msg; } catch(_) {}
+    throw new Error('Anthropic API error: ' + msg);
+  }
+  const data = await response.json();
+  return data.content.map(c => c.text || '').join('');
+}
+
+// Fetch Pollinations image and convert to base64 data URL
+// This avoids any Content-Security-Policy img-src restrictions on your server
+async function fetchImageAsDataURL(prompt) {
+  const openaiKey = document.getElementById('openaiKeyInput').value.trim();
+  const DIRECT = 'https://api.openai.com/v1/images/edits';
+  const PROXY  = 'https://corsproxy.io/?' + encodeURIComponent(DIRECT);
+  const headers = { 'Authorization': 'Bearer ' + openaiKey };
+
+  // Send ALL uploaded fabric photos — exactly like ChatGPT does
+  const form = new FormData();
+  form.append('model',   'gpt-image-1');
+  form.append('prompt',  prompt);
+  form.append('n',       '1');
+  form.append('size',    '1024x1024');
+  form.append('quality', 'high');
+
+  // Attach every fabric photo the user uploaded
+  for (let i = 0; i < fabrics.length; i++) {
+    const res  = await fetch(fabrics[i].dataURL);
+    const blob = await res.blob();
+    form.append('image[]', blob, `fabric-${i+1}.png`);
+  }
+
+  let response;
+  try {
+    response = await fetch(DIRECT, { method: 'POST', headers, body: form });
+  } catch (e) {
+    try {
+      response = await fetch(PROXY, { method: 'POST', headers, body: form });
+    } catch (e2) {
+      throw new Error('Could not reach OpenAI API: ' + e2.message);
+    }
+  }
+
+  if (!response.ok) {
+    let msg = 'HTTP ' + response.status;
+    try { const e = await response.json(); msg = e.error?.message || msg; } catch(_) {}
+    throw new Error('gpt-image-1 error: ' + msg);
+  }
+
+  const data = await response.json();
+  const item = data.data[0];
+  if (item.b64_json) return 'data:image/png;base64,' + item.b64_json;
+  if (item.url)      return item.url;
+  throw new Error('No image data in response');
+}
+
+// ── RESULT ACTIONS ──
+function copyPrompt(i) {
+  navigator.clipboard.writeText(resultData[i]?.prompt || '').catch(() => {});
+}
+
+// ── PASSWORD GATE ──
+// Change the value below to set your password
+const APP_PASSWORD = 'Maine1';
+
+function checkPassword() {
+  const val = document.getElementById('gateInput').value;
+  if (val === APP_PASSWORD) {
+    sessionStorage.setItem('fv_auth', '1');
+    document.getElementById('gate').style.display = 'none';
+    // Also pre-fill API keys from localStorage if saved
+    const ak = localStorage.getItem('fv_anthropic_key');
+    const ok = localStorage.getItem('fv_openai_key');
+    if (ak) document.getElementById('keyInput').value = ak;
+    if (ok) document.getElementById('openaiKeyInput').value = ok;
+    onKeyInput();
+  } else {
+    const err = document.getElementById('gateError');
+    err.classList.add('show');
+    document.getElementById('gateInput').value = '';
+    document.getElementById('gateInput').focus();
+    setTimeout(() => err.classList.remove('show'), 3000);
+  }
+}
+
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem('fv_auth') === '1') {
+  document.getElementById('gate').style.display = 'none';
+  // Pre-fill saved keys
+  const ak = localStorage.getItem('fv_anthropic_key');
+  const ok = localStorage.getItem('fv_openai_key');
+  if (ak) document.getElementById('keyInput').value = ak;
+  if (ok) document.getElementById('openaiKeyInput').value = ok;
+  setTimeout(onKeyInput, 0);
+}
+
+// ── LIGHTBOX ──
+function openLightbox(src, label) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxLabel').textContent = label || '';
+  document.getElementById('lightbox').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightboxImg').src = '';
+  document.body.style.overflow = '';
+}
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ── FEEDBACK SYSTEM ──
+// Storage key per use case
+function fbKey(ucId) { return 'fv_feedback_' + ucId; }
+
+// Load all feedback entries for a use case
+function loadFeedback(ucId) {
+  try { return JSON.parse(localStorage.getItem(fbKey(ucId)) || '[]'); } catch(_) { return []; }
+}
+
+// Save a feedback entry
+function saveFeedback(ucId, rating, prompt, note) {
+  const entries = loadFeedback(ucId);
+  entries.unshift({
+    rating,   // 'good', 'bad', 'gold'
+    prompt,
+    note: note || '',
+    date: new Date().toLocaleDateString()
+  });
+  // Keep last 20 entries per use case
+  localStorage.setItem(fbKey(ucId), JSON.stringify(entries.slice(0, 20)));
+}
+
+// Build feedback summary string for Claude to read
+function buildFeedbackContext() {
+  const lines = [];
+  USE_CASES.forEach(uc => {
+    const entries = loadFeedback(uc.id);
+    if (!entries.length) return;
+    const gold = entries.filter(e => e.rating === 'gold');
+    const good = entries.filter(e => e.rating === 'good');
+    const bad  = entries.filter(e => e.rating === 'bad');
+    if (!gold.length && !good.length && !bad.length) return;
+    lines.push(`\nUse case: ${uc.name}`);
+    if (gold.length) {
+      lines.push('  GOLD STANDARD prompts (replicate this quality):');
+      gold.slice(0,2).forEach(e => lines.push('    - "' + e.prompt.substring(0,120) + '"' + (e.note ? ' [Note: ' + e.note + ']' : '')));
+    }
+    if (good.length) {
+      lines.push('  GOOD prompts (worked well):');
+      good.slice(0,2).forEach(e => lines.push('    - "' + e.prompt.substring(0,100) + '"' + (e.note ? ' [Note: ' + e.note + ']' : '')));
+    }
+    if (bad.length) {
+      lines.push('  BAD prompts (avoid these approaches):');
+      bad.slice(0,2).forEach(e => lines.push('    - "' + e.prompt.substring(0,100) + '"' + (e.note ? ' [Note: ' + e.note + ']' : '')));
+    }
+  });
+  return lines.join('\n');
+}
+
+// Render feedback buttons on a result card
+function renderFeedback(cardIdx, ucName, prompt) {
+  const uc = USE_CASES.find(u => u.name === ucName) || {id: 'other_1'};
+  const existing = loadFeedback(uc.id)[0];
+  const savedRating = existing?.prompt === prompt ? existing.rating : null;
+
+  const actEl = document.querySelector(`#rc-${cardIdx} .result-actions`);
+  if (!actEl) return;
+
+  // Insert feedback bar after actions
+  const existing_fb = document.getElementById('fb-' + cardIdx);
+  if (existing_fb) existing_fb.remove();
+
+  const fbDiv = document.createElement('div');
+  fbDiv.id = 'fb-' + cardIdx;
+  fbDiv.className = 'feedback-bar';
+  fbDiv.innerHTML = `
+    <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">Rate:</span>
+    <button class="fb-btn ${savedRating==='gold'?'gold':''}" id="fb-gold-${cardIdx}" onclick="submitFeedback(${cardIdx},'gold','${ucName.replace(/'/g,"\\'")}',\`${prompt.replace(/`/g,"\\`").substring(0,200)}\`)">⭐ Gold</button>
+    <button class="fb-btn ${savedRating==='good'?'good':''}" id="fb-good-${cardIdx}" onclick="submitFeedback(${cardIdx},'good','${ucName.replace(/'/g,"\\'")}',\`${prompt.replace(/`/g,"\\`").substring(0,200)}\`)">👍 Good</button>
+    <button class="fb-btn ${savedRating==='bad'?'bad':''}"  id="fb-bad-${cardIdx}"  onclick="submitFeedback(${cardIdx},'bad', '${ucName.replace(/'/g,"\\'")}',\`${prompt.replace(/`/g,"\\`").substring(0,200)}\`)">👎 Bad</button>
+    <span class="fb-saved" id="fb-saved-${cardIdx}">✓ Saved</span>
+    <textarea class="fb-note" id="fb-note-${cardIdx}" placeholder="Optional note: what was good or bad about this result…"></textarea>
+    <button class="fb-history-btn" onclick="showFeedbackHistory()">View feedback history ↗</button>
+  `;
+  actEl.parentNode.insertBefore(fbDiv, actEl.nextSibling);
+}
+
+function submitFeedback(cardIdx, rating, ucName, prompt) {
+  const uc   = USE_CASES.find(u => u.name === ucName) || {id:'other_1'};
+  const note = document.getElementById('fb-note-' + cardIdx)?.value || '';
+  saveFeedback(uc.id, rating, prompt, note);
+
+  // Update button states
+  ['gold','good','bad'].forEach(r => {
+    const btn = document.getElementById('fb-' + r + '-' + cardIdx);
+    if (btn) btn.className = 'fb-btn' + (r === rating ? ' ' + r : '');
+  });
+
+  // Flash saved indicator
+  const saved = document.getElementById('fb-saved-' + cardIdx);
+  if (saved) {
+    saved.classList.add('show');
+    setTimeout(() => saved.classList.remove('show'), 2000);
+  }
+}
+
+function showFeedbackHistory() {
+  const body = document.getElementById('fbHistoryBody');
+  const panel = document.getElementById('fbHistory');
+  const lines = [];
+
+  USE_CASES.forEach(uc => {
+    const entries = loadFeedback(uc.id);
+    if (!entries.length) return;
+    lines.push(`
+      <div class="fb-history-group">
+        <div class="fb-history-uc">${uc.icon || '✦'} ${uc.name}</div>
+        ${entries.map(e => `
+          <div class="fb-entry">
+            <div class="fb-entry-rating">${e.rating==='gold'?'⭐':e.rating==='good'?'👍':'👎'}</div>
+            <div class="fb-entry-detail">
+              <div class="fb-entry-prompt">${e.prompt.substring(0,180)}…</div>
+              ${e.note ? `<div class="fb-entry-note">"${e.note}"</div>` : ''}
+              <div class="fb-entry-date">${e.date}</div>
+            </div>
+          </div>`).join('')}
+      </div>`);
+  });
+
+  body.innerHTML = lines.length ? lines.join('') : '<div style="color:var(--thread);font-size:13px;">No feedback saved yet. Rate some mockups to build your history.</div>';
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── ERROR UI ──
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+</script>
+</body>
+</html>
